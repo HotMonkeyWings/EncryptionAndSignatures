@@ -1,5 +1,6 @@
 #include <NTL/ZZ.h>
 #include <tuple>
+#include "HelperUtils.h"
 
 using namespace std;
 using namespace NTL;
@@ -44,7 +45,10 @@ ZZ decrypt(ZZ c_msg, ZZ p, ZZ key, ZZ q){
 
 int main()
 {
-    ZZ m, q, g, key, h, m_test;
+    ZZ msg_raw, q, g, key, h, msg_decrypted;
+    string msg_string;
+
+    long temp;
     // Bob's variables
     int keySize;
     cout << "Enter Key Size: ";
@@ -54,14 +58,20 @@ int main()
     key = generatePrivateKey(q);
     PowerMod(h, g, key, q);
 
-    cout << "Enter message to encrypt: ";
-    cin >> m;
-    auto [c, p] = encrypt(m, q, h, g);
+    cout << "Enter word to encrypt: ";
+    cin.ignore(100, '\n');
+    getline(cin, msg_string);
+    msg_raw = EncodeToLong(msg_string);
+
+    auto [c, p] = encrypt(msg_raw, q, h, g);
 
     cout << "Encrypted message: " << c << "\n";
 
-    m_test = decrypt(c, p, key, q);
+    msg_decrypted = decrypt(c, p, key, q);
+    conv(temp, msg_decrypted);
 
-    cout << "Decrypted message: " << m_test << "\n";
+    msg_string = DecodeToText(temp);
+
+    cout << "Decrypted message: " << msg_string << "\n";
     
 }

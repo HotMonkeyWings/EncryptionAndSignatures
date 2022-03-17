@@ -1,6 +1,7 @@
 #include <NTL/ZZ.h>
 #include <csignal>
 #include <tuple>
+#include "HelperUtils.h"
 
 using namespace std;
 using namespace NTL;
@@ -64,22 +65,34 @@ int main() {
     cout << "Enter RSA Key Size: ";
     cin >> keySize;
 
+    // (d,n) will be the private key.
+    // (e,n) will be the public key.
     auto [d, e, n] = generateKeys(keySize);
 
     // Defining message and its encryption
     // and a test output for decryption
-    ZZ m, c, m_;
+    ZZ msg_raw, msg_encrypted, msg_decrypted;
+    string msg_string;
 
-    cout << "Enter message to encrypt(numbers only): ";
-    cin >> m;
-    cout << m;
+    // A temp variable for storing long vars
+    long temp;
 
-    PowerMod(c, m, e, n);
+    // The rest here is self explanatatory. 
+    cout << "Enter word to encrypt: ";
+    cin.ignore(100, '\n');
+    getline(cin, msg_string);
+    msg_raw = EncodeToLong(msg_string);
 
-    cout << "\nEncrypted message is " << c << "\n";
+    PowerMod(msg_encrypted, msg_raw, e, n);
+
+    cout << "\nEncrypted message is " << msg_encrypted << "\n";
     cout << "\nDecrypting...\n";
     
-    PowerMod(m, c, d, n);
-    cout << "Decrypted message is " << m << "\n";
+    PowerMod(msg_decrypted, msg_encrypted, d, n);
+    conv(temp, msg_decrypted);
+
+    msg_string = DecodeToText(temp);
+
+    cout << "Decrypted message is " << msg_string << "\n";
 
 }
