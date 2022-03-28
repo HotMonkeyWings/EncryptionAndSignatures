@@ -58,19 +58,18 @@ int main()
     key = generatePrivateKey(q);
     PowerMod(h, g, key, q);
 
-    cout << "Enter word to encrypt: ";
+    cout << "Enter message to encrypt: ";
     cin.ignore(100, '\n');
     getline(cin, msg_string);
-    msg_raw = EncodeToLong(msg_string);
+    msg_raw = Encode(msg_string);
 
     auto [c, p] = encrypt(msg_raw, q, h, g);
 
-    cout << "Encrypted message: " << c << "\n";
+    cout << "\nEncrypted message: " << DisplayBase64(c) << "\n";
 
     msg_decrypted = decrypt(c, p, key, q);
-    conv(temp, msg_decrypted);
 
-    msg_string = DecodeToText(temp);
+    msg_string = Decode(msg_decrypted);
 
     cout << "Decrypted message: " << msg_string << "\n";
     

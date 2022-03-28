@@ -47,13 +47,13 @@ tuple<ZZ, ZZ, ZZ> generateKeys(int keySize)
 
     // Not to compute e, while making sure its inverse can be found
     // for private key (d)
-    recompute: computePublicKey(&e, keySize, tot_n);
+    computePublicKey(&e, keySize, tot_n);
 
     InvMod(d, e, tot_n);
 
 
-    cout << "\nThe public key(e) = " << e << "\n";
-    cout << "The private key(d) = " << d << "\n\n";
+    cout << "\nThe public key(e) = " << DisplayBase64(e) << "\n";
+    cout << "The private key(d) = " << DisplayBase64(d) << "\n\n";
     return {d, e, n};
 }
 
@@ -72,27 +72,26 @@ int main() {
     // Defining message and its encryption
     // and a test output for decryption
     ZZ msg_raw, msg_encrypted, msg_decrypted;
-    string msg_string;
+    string msg_string, display_string;
 
     // A temp variable for storing long vars
     long temp;
 
     // The rest here is self explanatatory. 
-    cout << "Enter word to encrypt: ";
+    cout << "Enter message to encrypt: ";
     cin.ignore(100, '\n');
     getline(cin, msg_string);
-    msg_raw = EncodeToLong(msg_string);
+    msg_raw = Encode(msg_string);
 
     PowerMod(msg_encrypted, msg_raw, e, n);
 
-    cout << "\nEncrypted message is " << msg_encrypted << "\n";
+    cout << "\nEncrypted message is " << DisplayBase64(msg_encrypted) << "\n";
     cout << "\nDecrypting...\n";
     
     PowerMod(msg_decrypted, msg_encrypted, d, n);
-    conv(temp, msg_decrypted);
 
-    msg_string = DecodeToText(temp);
+    msg_string = Decode(msg_decrypted);
 
-    cout << "Decrypted message is " << msg_string << "\n";
+    cout << "Decrypted message is: " << msg_string << "\n";
 
 }
