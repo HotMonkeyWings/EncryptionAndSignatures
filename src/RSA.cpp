@@ -2,15 +2,18 @@
 #include <csignal>
 #include <tuple>
 #include "HelperUtils.h"
+#include <unistd.h>     // Change to Windows.h for windows PCs. unistd.h is for linux only.
 
 using namespace std;
 using namespace NTL;
 
 void computePublicKey(ZZ* e, int keySize, ZZ tot_n) {
     // Generate a psuedo random 'e' of our desired keySize.
-    // Keep iterating until the GCD of it and totient is 1
     RandomBits(*e, keySize);
-    while (GCD(*e, tot_n) != 1){
+
+    // Makes sure e and tot_n are coprime and e is less than tot_n.
+    // InvMod will fail if e > tot_n
+    while (GCD(*e, tot_n) != 1 || *e > tot_n){
         cout << *e << " did not work. Recomputing..." << "\n";
         RandomBits(*e, keySize);
     }
