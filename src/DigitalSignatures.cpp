@@ -1,10 +1,16 @@
+
 #include <NTL/ZZ.h>
 #include <csignal>
 #include <tuple>
 #include "HelperUtils.h"
+#include <string>
+#include <iostream>
+#include "sha1.hpp"
 
 using namespace std;
 using namespace NTL;
+
+// RSA Digital Sigature Scheme
 
 void computePublicKey(ZZ* e, int keySize, ZZ tot_n) {
     // Generate a psuedo random 'e' of our desired keySize.
@@ -54,9 +60,50 @@ tuple<ZZ, ZZ, ZZ> generateKeys(int keySize)
     return {d, e, n};
 }
 
-int main() {
+// Private key (d, n), and message m
+ZZ RSASignatureGenerate(ZZ n, ZZ d, string m) {
+    string hash_hex;
+    ZZ hash, sign;
+    SHA1 checksum;
+
+    // Converts message to hash in hex, then into decimal form
+    checksum.update(m);
+    hash_hex = checksum.final();
+    hash = HexToDecimal(hash_hex);
+
+    PowerMod(sign, hash, d, n);
+
+    cout << "Sign is " << DisplayBase64(sign) <<endl;
+    return sign;
+}
+
+bool RSASignatureVerify(ZZ e, ZZ n, string m, ZZ sign) {
+    string hash_hex;
+    ZZ hash, decodedHash;
+    SHA1 checksum;
+
+    // Converts message to hash in hex, then into decimal form
+    checksum.update(m);
+    hash_hex = checksum.final();
+    hash = HexToDecimal(hash_hex);
+
+    PowerMod(decodedHash, sign, e, n);
+
+    if (hash == decodedHash){
+        cout << "\nSignature is valid." << endl;
+        return true;
+    }
+    cout << "\nWARNING! Signature is invalid." << endl;
+    return false;
+}
+
+void RSASigantureDemo() {
+    // Select Key Size
     int keySize;
     char option;
+    ZZ sign;
+    string msg_string;
+
     cout << "Select RSA Key Size \n(a) 512\n(b) 1024\n\nOption(default=a):";
     option = getchar();
     keySize = option == 'b' ? 1024 : 512;
@@ -66,29 +113,17 @@ int main() {
     // (e,n) will be the public key.
     auto [d, e, n] = generateKeys(keySize);
 
-    // Defining message and its encryption
-    // and a test output for decryption
-    ZZ msg_raw, msg_encrypted, msg_decrypted;
-    string msg_string, display_string;
-
-    // A temp variable for storing long vars
-    long temp;
-
-    // The rest here is self explanatatory. 
+    // Read the message
     cout << "Enter message to encrypt: ";
     cin.ignore(100, '\n');
     getline(cin, msg_string);
-    msg_raw = Encode(msg_string);
 
-    PowerMod(msg_encrypted, msg_raw, e, n);
+    sign = RSASignatureGenerate(n, d, msg_string);
+    RSASignatureVerify(e, n, msg_string, sign);
+}
 
-    cout << "\nEncrypted message is " << DisplayBase64(msg_encrypted) << "\n";
-    cout << "\nDecrypting...\n";
-    
-    PowerMod(msg_decrypted, msg_encrypted, d, n);
-
-    msg_string = Decode(msg_decrypted);
-
-    cout << "Decrypted message is: " << msg_string << "\n";
-
+int main(int /* argc */, const char ** /* argv */)
+{
+    RSASigantureDemo();
+    return 0;
 }

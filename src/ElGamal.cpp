@@ -35,7 +35,8 @@ tuple<ZZ, ZZ> encrypt(ZZ msg, ZZ q, ZZ h, ZZ g)
     return {c, p};
 }
 
-ZZ decrypt(ZZ c_msg, ZZ p, ZZ key, ZZ q){
+ZZ decrypt(ZZ c_msg, ZZ p, ZZ key, ZZ q)
+{
     ZZ msg, h;
     PowerMod(h, p, key, q);
     div(msg, c_msg, h);
@@ -51,8 +52,12 @@ int main()
     long temp;
     // Bob's variables
     int keySize;
-    cout << "Enter Key Size: ";
-    cin >> keySize ;
+    char option;
+    cout << "Select RSA Key Size \n(a) 512\n(b) 1024\n\nOption(default=a):";
+    option = getchar();
+    keySize = option == 'b' ? 1024 : 512;
+    cout << "\nYou have chose " << keySize << " bits for the key.\n" << endl;
+
     RandomBits(q, keySize);
     RandomBnd(g, q);
     key = generatePrivateKey(q);
@@ -72,5 +77,4 @@ int main()
     msg_string = Decode(msg_decrypted);
 
     cout << "Decrypted message: " << msg_string << "\n";
-    
 }
