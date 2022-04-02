@@ -201,7 +201,6 @@ tuple<ZZ, ZZ> ElGamalSignatureGenerate(ZZ p, ZZ q, ZZ g, ZZ x, string m)
         }
 
         InvMod(k_inverse, k, q);
-        cout << "k: " << k << "\nk^-1: " << k_inverse << endl;
         PowerMod(T, g, k, p);
 
         // Compute r
@@ -273,10 +272,10 @@ void ElGamalDemo()
 {
     string msg;
 
-    Get the Key Size
+    // Get the Key Size
     long keySize;
     char option;
-    cout << "Select RSA Key Size \n(a) 512\n(b) 1024\n\nOption(default=a):";
+    cout << "Select ElGamal Key Size \n(a) 512\n(b) 1024\n\nOption(default=a):";
     option = getchar();
     keySize = option == 'b' ? 1024 : 512;
     cout << "\nYou have chose " << keySize << " bits for the key.\n"
