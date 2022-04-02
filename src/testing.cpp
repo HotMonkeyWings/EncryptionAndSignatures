@@ -6,6 +6,7 @@
 using namespace std;
 using namespace NTL;
 #define CHARACTERS "HELLO THERE"
+#define INF power(ZZ(2), 4096);
 
 int main() {
     // ZZ p = ZZ(4);
@@ -32,11 +33,13 @@ int main() {
     // hello =  to_ZZ_p(temp);
     // cout << temp << endl;
     // cout << hello << endl;
-    ZZ a, b, c;
-    a = ZZ(5);
-    b = ZZ(3);
-    c = ZZ(10);
-    cout << divide(a, b) << endl;
-    cout << divide(c, a) <<endl;
+    // ZZ a, b, c;
+    // a = ZZ(5);
+    // b = ZZ(3);
+    // c = ZZ(10);
+    // cout << divide(a, b) << endl;
+    // cout << divide(c, a) <<endl;
+    cout << INF;
+
     
 }
