@@ -1,4 +1,4 @@
-#include <NTL/ZZ_p.h>
+#include <NTL/ZZ.h>
 #include <tuple>
 #include "HelperUtils.h"
 #include <string>

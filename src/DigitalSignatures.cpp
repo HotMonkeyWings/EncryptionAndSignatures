@@ -6,6 +6,7 @@
 #include <string>
 #include <iostream>
 #include "sha1.hpp"
+#include <math.h>
 
 using namespace std;
 using namespace NTL;
@@ -299,9 +300,118 @@ void ElGamalDemo()
     ElGamalSignatureVerify(p, q, g, y, r, s, msg);
 }
 
+// ECC Signature Scheme
+#define K 13
+
+
+// Generate the ECC Public(Q) and Private(d) keys.
+// (a,b) = E (The curve)
+// (x,y) = P (Point on curve)
+tuple<Point, ZZ> ECCGenerateKeys(ZZ p, Curve E, Point P, ZZ n)
+{
+    // Produce Private Key (d) less than n
+    ZZ d;
+    do {
+        RandomBnd(d, n);
+    } while(d == 0);
+    
+
+    // Compute Q = dP as Public Key(Q)
+    Point Q = ScalarMult(p, E, P, d);
+
+    return {Q, d};
+}
+
+tuple<ZZ, ZZ> ECCSignatureGenerate(ZZ p, Curve E, Point P, ZZ n, ZZ d, string m) {
+    Point R;
+    ZZ k, r, s, hash;
+    string hash_hex;
+    SHA1 checksum;
+
+    // Hash the message
+    checksum.update(m);
+    hash_hex = checksum.final();
+    hash = HexToDecimal(hash_hex);
+
+    do {
+        RandomBnd(k, n);
+    } while (k == 0);
+
+    R = ScalarMult(p, E, P, k);
+    r = R.x;                    // Take only x-coordinate
+
+    s = (InvMod(k, n) * (hash + d*r)) % n;      // s = k_inverse * (h + dr) mod p
+
+    return {r, s};
+}
+
+bool ECCSignatureVerify(ZZ p, Curve E, Point P, ZZ n, Point Q, ZZ r, ZZ s, string m) {
+    ZZ w, u, v, hash;
+    Point R;
+    
+    // Temp Variables
+    string hash_hex;
+    SHA1 checksum;
+    Point uP, vQ;
+    
+    // w = s^-1 mod n
+    InvMod(w, s, n);
+
+
+    // Hash the message
+    checksum.update(m);
+    hash_hex = checksum.final();
+    hash = HexToDecimal(hash_hex);
+
+    // Calculate u and v
+    MulMod(u, hash, w, n);          // u = h*w mod n
+    MulMod(v, r, w, n);             // v = r*w mod n
+
+    // Calculate R
+    uP = ScalarMult(p, E, P, u);
+    vQ = ScalarMult(p, E, Q, v);
+    R = AddPoints(p, E, uP, vQ);
+    cout << "\nComputed R.x: " << R.x << endl;
+
+    if (r == R.x) {
+        cout << "Sign is Valid." << endl;
+        return true;
+    }
+    cout << "WARNING! Sign is invalid." << endl;
+    return true;
+}
+
+void ECCDemo() {
+    string msg_string;
+
+    cout << "Enter message to encrypt: ";
+    getline(cin, msg_string);
+    Point P = {
+        ZZ(HexToDecimal("188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012")),
+        ZZ(HexToDecimal("07192b95ffc8da78631011ed6b24cdd573f977a11e794811"))
+    };
+    Curve E = {
+        ZZ(-3),
+        ZZ(HexToDecimal("64210519e59c80e70fa7e9ab72243049feb8deecc146b9b1"))
+    };
+    ZZ p = power(ZZ(2), 192) - power(ZZ(2), 64) - ZZ(1);
+    ZZ n = ZZ(HexToDecimal("ffffffffffffffffffffffff99def836146bc9b1b4d22831"));
+
+    auto [Q, d] = ECCGenerateKeys(p, E, P, n);
+    cout << "\nPrivate Key(d): " << DisplayBase64(d) << endl;
+    cout << "Public Key(Q): (" << Q.x << ",\n" << Q.y << ")" << endl;
+
+    auto [r, s] = ECCSignatureGenerate(p, E, P, n, d, msg_string);
+    cout << "\nGenerated Signatures:\nr: " << r << "\ns: " << s << endl;
+
+    ECCSignatureVerify(p, E, P, n, Q, r, s, msg_string);
+}
+
+
 int main()
 {
     // RSASigantureDemo();
-    ElGamalDemo();
+    // ElGamalDemo();
+    ECCDemo();
     return 0;
 }
