@@ -6,8 +6,10 @@
 using namespace std;
 using namespace NTL;
 
-// Generate the DL parameters (p, q, g)
-// q = t-bits, p = l-bits
+// Generate DL Parmaeters
+// p = l-bits
+// q = q-bits
+// g <= q-1
 tuple<ZZ, ZZ, ZZ> GenerateDLParameters(long l, long t)
 {
     // Initialize DL Parameteres
@@ -16,20 +18,9 @@ tuple<ZZ, ZZ, ZZ> GenerateDLParameters(long l, long t)
     // Temp variable
     ZZ h, temp;
 
-    // Find p such that q divides p-1
-    RandomBits(q, t);
-    RandomBits(p, l);
-    while (divide(p - 1, q) != 1)
-    {
-        cout << "p = " << p << " did not work. Recomputing..." << endl;
-        rem(temp, p - 1, q);
-        p = p - temp;
-
-        // Verify if p is still l-bit
-        if (NumBits(p) != l) {
-            RandomBits(p, l);
-        }
-    }
+    // Computer p such that q divides p-1 using GermainPrimes
+    GenGermainPrime(q, t);
+    p = 2*q + 1;    
 
     // Generate g that is not 1
     do
@@ -42,9 +33,10 @@ tuple<ZZ, ZZ, ZZ> GenerateDLParameters(long l, long t)
     return {p, q, g};
 }
 
-tuple<ZZ, ZZ> GenerateDlKeyPair(ZZ p, ZZ q, ZZ g) {
-    // x is Private Key
-    // y is Public Key
+// Generates the DL Key Pair
+// x is Private Key
+// y is Public Key
+tuple<ZZ, ZZ> GenerateDLKeyPair(ZZ p, ZZ q, ZZ g) {
     ZZ x, y;
 
     RandomBnd(x, q);
@@ -75,7 +67,7 @@ string ElGamalDecrypt(ZZ p, ZZ q, ZZ g, ZZ x, ZZ c1, ZZ c2) {
     // m is to store message in decimals
     ZZ temp, m;
 
-    PowerMod(temp, c1, x, p);       // c1^x mod p
+    PowerMod(temp, c1, x, p);         // c1^x mod p
     InvMod(temp, temp, p);            // c1^(-x) mod p 
     MulMod(m, c2, temp, p);
 
@@ -86,6 +78,7 @@ string ElGamalDecrypt(ZZ p, ZZ q, ZZ g, ZZ x, ZZ c1, ZZ c2) {
 int main() {
     string msg;
 
+    // Get the Key Size
     long keySize;
     char option;
     cout << "Select RSA Key Size \n(a) 512\n(b) 1024\n\nOption(default=a):";
@@ -93,22 +86,22 @@ int main() {
     keySize = option == 'b' ? 1024 : 512;
     cout << "\nYou have chose " << keySize << " bits for the key.\n" << endl;
 
+    // Generate the  DL Parameters
     auto [p, q, g] = GenerateDLParameters(keySize, keySize);
-
     cout << "p = " << p << "\nq = " << q << "\ng = " << g << endl;
 
-    auto [x, y] = GenerateDlKeyPair(p, q, g);
-
+    // Generate the key pair
+    auto [x, y] = GenerateDLKeyPair(p, q, g);
     cout << "\nPrivate Key(x): " << DisplayBase64(x) << "\nPublic Key(y): " << DisplayBase64(y) << endl;
 
+    // Get and Encrypt the message
     cout << "\nEnter message to encrypt: ";
     cin.ignore(100, '\n');
     getline(cin, msg);
-
     auto [c1, c2] = ElGamalEncrypt(p, q, g, y, msg);
-
     cout << "\nc1: " << DisplayBase64(c1) << "\nc2: " << DisplayBase64(c2) << endl;
 
+    // Decrypt the message
     cout << "\nDecrypted Message: " << ElGamalDecrypt(p, q, g, x, c1, c2) << endl;
 
     return 0;

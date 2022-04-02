@@ -135,18 +135,44 @@ void RSASigantureDemo()
 
 // ELGamal Signature Scheme
 
-// Generate ElGamal Private Key (x) 
-ZZ GenerateElGamalPrivateKey(ZZ q)
+// Generate DL Parmaeters
+// p = l-bits
+// q = q-bits
+// g <= q-1
+tuple<ZZ, ZZ, ZZ> GenerateDLParameters(long l, long t)
 {
-    ZZ key;
-    RandomBnd(key, q);
+    // Initialize DL Parameteres
+    ZZ p, q, g;
 
-    while (GCD(key, q) != 1)
+    // Temp variable
+    ZZ h, temp;
+
+    // Computer p such that q divides p-1 using GermainPrimes
+    GenGermainPrime(q, t);
+    p = 2*q + 1;    
+
+    // Generate g that is not 1
+    do
     {
-        RandomBnd(key, q);
-    }
+        RandomBnd(h, p);
+        div(temp, p - 1, q);
+        PowerMod(g, h, temp, p);
+    } while (g == 1);
 
-    return key;
+    return {p, q, g};
+}
+
+// Generates the DL Key Pair
+// x is Private Key
+// y is Public Key
+tuple<ZZ, ZZ> GenerateDLKeyPair(ZZ p, ZZ q, ZZ g)
+{
+    ZZ x, y;
+
+    RandomBnd(x, q);
+    PowerMod(y, g, x, p);
+
+    return {x, y};
 }
 
 tuple<ZZ, ZZ> ElGamalSignatureGenerate(ZZ p, ZZ q, ZZ g, ZZ x, string m)
@@ -154,6 +180,7 @@ tuple<ZZ, ZZ> ElGamalSignatureGenerate(ZZ p, ZZ q, ZZ g, ZZ x, string m)
     ZZ hash, k, k_inverse, T;
     string hash_hex;
     SHA1 checksum;
+    ZZ r, s;
 
     // Temp variables
     ZZ temp;
@@ -163,32 +190,33 @@ tuple<ZZ, ZZ> ElGamalSignatureGenerate(ZZ p, ZZ q, ZZ g, ZZ x, string m)
     hash_hex = checksum.final();
     hash = HexToDecimal(hash_hex);
 
-    // Set modulus as q for ZZ_p variables
-    ZZ_p::init(q);
-    ZZ_p r, s;
-
     while (1)
     {
         // Finding k and k_inverse
         RandomBnd(k, q);
+        while (GCD(k, q) != 1)
+        {
+            cout << k << " did not work. Recomputing..." << endl;
+            RandomBnd(k, q);
+        }
+
         InvMod(k_inverse, k, q);
+        cout << "k: " << k << "\nk^-1: " << k_inverse << endl;
+        PowerMod(T, g, k, p);
 
-        PowerMod(T, g, k, q);
-
-        // Finding r
-        r = 0 + T; // '0 +' will trigger the modulus of ZZ_p
+        // Compute r
+        r = T % q;
         if (r == 0)
         {
+            cout << "r cannot be 0. Recomputing k..." << endl;
             continue;
         }
 
         // Compute s
-        mul(temp, x, r);            // xr
-        add(temp, hash, temp);      // h + xr
-        mul(temp, k_inverse, temp); // temp = k^-1 (h + xr)
-        s = to_ZZ_p(temp);          // Apply modulus and store in s
-        if (s == 0)
+        MulMod(s, k_inverse, (hash + x*r), q); // s = k^-1 (h + xr)
+        if (s == 0 || GCD(s, q) != 1)
         {
+            cout << "s cannot be 0 / inverse should exist. Recomputing k..." << endl;
             continue;
         }
 
@@ -196,8 +224,85 @@ tuple<ZZ, ZZ> ElGamalSignatureGenerate(ZZ p, ZZ q, ZZ g, ZZ x, string m)
     }
 }
 
+bool ElGamalSignatureVerify(ZZ p, ZZ q, ZZ g, ZZ y, ZZ r, ZZ s, string m) {
+    if (r >= q || s >= q || s < 0 || r < 0){
+        cout << "WARNING! Invalid Signature." << endl;
+    }
+
+    ZZ hash, decodedHash;
+    string hash_hex;
+    SHA1 checksum;
+
+    // Temp variables
+    ZZ w, u1, u2;
+    ZZ g_u1, y_u2;
+    ZZ T, r_;
+
+    // Hash the message
+    checksum.update(m);
+    hash_hex = checksum.final();
+    hash = HexToDecimal(hash_hex);
+
+    // Compute w = s^-1 mod q
+    InvMod(w, s, q);
+
+    // Compute u1 and u2
+    MulMod(u1, hash, w, q);
+    MulMod(u2, r, w, q);
+
+    // Compute g^u1 and y^u2
+    PowerMod(g_u1, g, u1, p);
+    PowerMod(y_u2, y, u2, p);
+
+    // Compute T = g^u1 * y^u2 mod p
+    MulMod(T, g_u1, y_u2, p);
+
+    // Compute r_ = T mod q;
+    r_ = T % q;
+
+    // Compare r and r_
+    if (r == r_) {
+        cout << "Valid Signature." << endl;
+        return true;
+    }
+    cout << "WARNING! Invalid Signature." << endl;
+    return false;
+}
+
+void ElGamalDemo()
+{
+    string msg;
+
+    Get the Key Size
+    long keySize;
+    char option;
+    cout << "Select RSA Key Size \n(a) 512\n(b) 1024\n\nOption(default=a):";
+    option = getchar();
+    keySize = option == 'b' ? 1024 : 512;
+    cout << "\nYou have chose " << keySize << " bits for the key.\n"
+         << endl;
+
+    // Generate the  DL Parameters
+    auto [p, q, g] = GenerateDLParameters(keySize, keySize);
+    cout << "p = " << p << "\nq = " << q << "\ng = " << g << endl;
+
+    // Generate the key pair
+    auto [x, y] = GenerateDLKeyPair(p, q, g);
+    cout << "\nPrivate Key(x): " << DisplayBase64(x) << "\nPublic Key(y): " << DisplayBase64(y) << endl;
+
+    cout << "\nEnter message to sign: ";
+    cin.ignore(100, '\n');
+    getline(cin, msg);
+
+    auto [r, s] = ElGamalSignatureGenerate(p, q, g, x, msg);
+    cout << "r: " << DisplayBase64(r) << "\ns: " << DisplayBase64(s) << endl;
+
+    ElGamalSignatureVerify(p, q, g, y, r, s, msg);
+}
+
 int main()
 {
     // RSASigantureDemo();
+    ElGamalDemo();
     return 0;
 }
