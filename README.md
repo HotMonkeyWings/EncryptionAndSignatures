@@ -32,7 +32,7 @@ To run the code, simply run the output file as per the example given below.
 Utility files have been added in the `utils/` folder. They contain necessary
 functions to facilitate parameter Generation and Convertions.
 
-## Output Screenshots
+## Screenshots (Encryption)
 
 ### RSA
 #### 512 BITS
@@ -49,12 +49,12 @@ functions to facilitate parameter Generation and Convertions.
 ### ECC
 ![ECC](screenshots/ECC.png)
 
-### Digital Signatures
-#### RSA
+## Screenshots (Digital Signatures)
+### RSA
 ![RSA512](screenshots/DS_RSA512.png)
 ![RSA1024](screenshots/DS_RSA1024.png)
-#### El Gamal
+### El Gamal
 ![ElGamal512](screenshots/DS_ElGamal512.png)
 ![ElGamal1024](screenshots/DS_ElGamal1024.png)
-#### ECC
+### ECC
 ![ECC](screenshots/DS_ECC.png)
