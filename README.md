@@ -26,6 +26,11 @@ To run the code, simply run the output file as per the example given below.
 ./build/RSA
 ```
 
+## Extra Notes
+
+Utility files have been added in the `ultils/` folder. They contain necessary
+functions to facilitate parameter Generation and Convertions.
+
 ## Output Screenshots
 
 ### RSA
