@@ -1,4 +1,3 @@
-
 #include <NTL/ZZ.h>
 #include <string>
 #include <iostream>
@@ -190,13 +189,13 @@ bool ElGamalSignatureVerify(ZZ p, ZZ q, ZZ g, ZZ y, ZZ r, ZZ s, string m) {
 void ElGamalSignatureDemo()
 {
     string msg;
-
-    // Get the Key Size
     long keySize;
     char option;
+
     cout << "Select ElGamal Key Size \n(a) 512\n(b) 1024\n\nOption(default=a):";
-    option = getchar();
     cin.ignore(100, '\n');
+
+    option = getchar();
     keySize = option == 'b' ? 1024 : 512;
     cout << "\nYou have chose " << keySize << " bits for the key.\n"
          << endl;
@@ -209,6 +208,7 @@ void ElGamalSignatureDemo()
     auto [x, y] = GenerateDLKeyPair(p, q, g);
     cout << "\nPrivate Key(x): " << DisplayBase64(x) << "\nPublic Key(y): " << DisplayBase64(y) << endl;
 
+    cin.ignore(100, '\n');
     cout << "\nEnter message to sign: ";
     // cin.ignore(100, '\n');
     getline(cin, msg);
