@@ -1,34 +1,17 @@
 #include <NTL/ZZ.h>
-#include <tuple>
-#include "HelperUtils.h"
 #include <string>
 #include <iostream>
 #include <math.h>
 #include <stdio.h>
+
+#include "../utils/EncodeUtils.hpp"
+#include "../utils/ECCUtils.hpp"
 
 using namespace std;
 using namespace NTL;
 
 #define K 13
 
-
-// Generate the ECC Public(Q) and Private(d) keys.
-// (a,b) = E (The curve)
-// (x,y) = P (Point on curve)
-tuple<Point, ZZ> ECCGenerateKeys(ZZ p, Curve E, Point P, ZZ n)
-{
-    // Produce Private Key (d) less than n
-    ZZ d;
-    do {
-        RandomBnd(d, n);
-    } while(d == 0);
-    
-
-    // Compute Q = dP as Public Key(Q)
-    Point Q = ScalarMult(p, E, P, d);
-
-    return {Q, d};
-}
 
 tuple<Point, Point> ECCEncrypt(ZZ p, Curve E, Point P, ZZ n, Point Q, string msg) {
     ZZ msg_raw, k;

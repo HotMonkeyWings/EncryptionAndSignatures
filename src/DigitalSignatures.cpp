@@ -1,66 +1,17 @@
 
-#include <NTL/ZZ_p.h>
-#include <csignal>
-#include <tuple>
-#include "HelperUtils.h"
+#include <NTL/ZZ.h>
 #include <string>
 #include <iostream>
-#include "sha1.hpp"
 #include <math.h>
+
+#include "../utils/EncodeUtils.hpp"
+#include "../utils/ECCUtils.hpp"
+#include "../utils/ElGamalUtils.hpp"
+#include "../utils/RSAUtils.hpp"
+#include "../utils/sha1.hpp"
 
 using namespace std;
 using namespace NTL;
-
-// RSA Digital Sigature Scheme
-
-void computePublicKey(ZZ *e, int keySize, ZZ tot_n)
-{
-    // Generate a psuedo random 'e' of our desired keySize.
-    RandomBits(*e, keySize);
-
-    // Makes sure e and tot_n are coprime and e is less than tot_n.
-    // InvMod will fail if e > tot_n
-    while (GCD(*e, tot_n) != 1 || *e > tot_n)
-    {
-        cout << *e << " did not work. Recomputing..."
-             << "\n";
-        RandomBits(*e, keySize);
-    }
-}
-
-tuple<ZZ, ZZ, ZZ> generateKeys(int keySize)
-{
-
-    // Define the two primes p and q using ZZ class, n to store
-    // their product, and tot_n to store the totient function result
-    ZZ p, q, n, tot_n;
-
-    // Now generate the random primes of 256 bits.
-    RandomPrime(p, keySize / 2);
-    RandomPrime(q, keySize / 2);
-
-    cout << "p: " << p << "\n";
-    cout << "q: " << q << "\n";
-    // Calculate n and its totient. It will be difficult to calculate
-    // this totient without knowing p and q.
-    mul(n, p, q);
-    mul(tot_n, p - 1, q - 1);
-    cout << "n: " << n << "\n";
-    cout << "totient(n): " << tot_n << "\n\n";
-
-    // Now to get the public key (e) and private key (d)
-    ZZ e, d;
-
-    // Not to compute e, while making sure its inverse can be found
-    // for private key (d)
-    computePublicKey(&e, keySize, tot_n);
-
-    InvMod(d, e, tot_n);
-
-    cout << "\nThe public key(e) = " << DisplayBase64(e) << "\n";
-    cout << "The private key(d) = " << DisplayBase64(d) << "\n\n";
-    return {d, e, n};
-}
 
 // Generates RSA Siganture
 // (d, n) is the private key of the signature owner
@@ -116,6 +67,8 @@ void RSASigantureDemo()
     string msg_string;
 
     cout << "Select RSA Key Size \n(a) 512\n(b) 1024\n\nOption(default=a):";
+    cin.ignore(100, '\n');
+
     option = getchar();
     keySize = option == 'b' ? 1024 : 512;
     cout << "\nYou have chose " << keySize << " bits for the key.\n"
@@ -123,7 +76,7 @@ void RSASigantureDemo()
 
     // (d,n) will be the private key.
     // (e,n) will be the public key.
-    auto [d, e, n] = generateKeys(keySize);
+    auto [d, e, n] = GenerateRSAKeys(keySize);
 
     // Read the message
     cout << "Enter message to encrypt: ";
@@ -136,46 +89,7 @@ void RSASigantureDemo()
 
 // ELGamal Signature Scheme
 
-// Generate DL Parmaeters
-// p = l-bits
-// q = q-bits
-// g <= q-1
-tuple<ZZ, ZZ, ZZ> GenerateDLParameters(long l, long t)
-{
-    // Initialize DL Parameteres
-    ZZ p, q, g;
-
-    // Temp variable
-    ZZ h, temp;
-
-    // Computer p such that q divides p-1 using GermainPrimes
-    GenGermainPrime(q, t);
-    p = 2*q + 1;    
-
-    // Generate g that is not 1
-    do
-    {
-        RandomBnd(h, p);
-        div(temp, p - 1, q);
-        PowerMod(g, h, temp, p);
-    } while (g == 1);
-
-    return {p, q, g};
-}
-
-// Generates the DL Key Pair
-// x is Private Key
-// y is Public Key
-tuple<ZZ, ZZ> GenerateDLKeyPair(ZZ p, ZZ q, ZZ g)
-{
-    ZZ x, y;
-
-    RandomBnd(x, q);
-    PowerMod(y, g, x, p);
-
-    return {x, y};
-}
-
+// Generate ElGamal Signatures using the Private Key(x)
 tuple<ZZ, ZZ> ElGamalSignatureGenerate(ZZ p, ZZ q, ZZ g, ZZ x, string m)
 {
     ZZ hash, k, k_inverse, T;
@@ -224,9 +138,12 @@ tuple<ZZ, ZZ> ElGamalSignatureGenerate(ZZ p, ZZ q, ZZ g, ZZ x, string m)
     }
 }
 
+// Verify ElGamal Signature using the Public Key y
 bool ElGamalSignatureVerify(ZZ p, ZZ q, ZZ g, ZZ y, ZZ r, ZZ s, string m) {
+
+    //  Check if parameters are valid
     if (r >= q || s >= q || s < 0 || r < 0){
-        cout << "WARNING! Invalid Signature." << endl;
+        cout << "WARNING! Signature is invalid." << endl;
     }
 
     ZZ hash, decodedHash;
@@ -262,14 +179,15 @@ bool ElGamalSignatureVerify(ZZ p, ZZ q, ZZ g, ZZ y, ZZ r, ZZ s, string m) {
 
     // Compare r and r_
     if (r == r_) {
-        cout << "Valid Signature." << endl;
+        cout << "Signature is Valid." << endl;
         return true;
     }
-    cout << "WARNING! Invalid Signature." << endl;
+    cout << "WARNING! Signature is Invalid." << endl;
     return false;
 }
 
-void ElGamalDemo()
+// Demo instance to run ElGamal Sigature Generation and Verification.
+void ElGamalSignatureDemo()
 {
     string msg;
 
@@ -278,6 +196,7 @@ void ElGamalDemo()
     char option;
     cout << "Select ElGamal Key Size \n(a) 512\n(b) 1024\n\nOption(default=a):";
     option = getchar();
+    cin.ignore(100, '\n');
     keySize = option == 'b' ? 1024 : 512;
     cout << "\nYou have chose " << keySize << " bits for the key.\n"
          << endl;
@@ -291,7 +210,7 @@ void ElGamalDemo()
     cout << "\nPrivate Key(x): " << DisplayBase64(x) << "\nPublic Key(y): " << DisplayBase64(y) << endl;
 
     cout << "\nEnter message to sign: ";
-    cin.ignore(100, '\n');
+    // cin.ignore(100, '\n');
     getline(cin, msg);
 
     auto [r, s] = ElGamalSignatureGenerate(p, q, g, x, msg);
@@ -301,27 +220,10 @@ void ElGamalDemo()
 }
 
 // ECC Signature Scheme
-#define K 13
 
-
-// Generate the ECC Public(Q) and Private(d) keys.
-// (a,b) = E (The curve)
-// (x,y) = P (Point on curve)
-tuple<Point, ZZ> ECCGenerateKeys(ZZ p, Curve E, Point P, ZZ n)
-{
-    // Produce Private Key (d) less than n
-    ZZ d;
-    do {
-        RandomBnd(d, n);
-    } while(d == 0);
-    
-
-    // Compute Q = dP as Public Key(Q)
-    Point Q = ScalarMult(p, E, P, d);
-
-    return {Q, d};
-}
-
+// Generates ECC Signature given a curve E over prime field p
+// with order n and Private Key (d)
+// Point P is taken as the initial point
 tuple<ZZ, ZZ> ECCSignatureGenerate(ZZ p, Curve E, Point P, ZZ n, ZZ d, string m) {
     Point R;
     ZZ k, r, s, hash;
@@ -345,6 +247,7 @@ tuple<ZZ, ZZ> ECCSignatureGenerate(ZZ p, Curve E, Point P, ZZ n, ZZ d, string m)
     return {r, s};
 }
 
+// Verify the signature is valid using Public Key (Q)
 bool ECCSignatureVerify(ZZ p, Curve E, Point P, ZZ n, Point Q, ZZ r, ZZ s, string m) {
     ZZ w, u, v, hash;
     Point R;
@@ -374,17 +277,19 @@ bool ECCSignatureVerify(ZZ p, Curve E, Point P, ZZ n, Point Q, ZZ r, ZZ s, strin
     cout << "\nComputed R.x: " << R.x << endl;
 
     if (r == R.x) {
-        cout << "Sign is Valid." << endl;
+        cout << "Signature is Valid." << endl;
         return true;
     }
-    cout << "WARNING! Sign is invalid." << endl;
+    cout << "WARNING! Signature is invalid." << endl;
     return true;
 }
 
-void ECCDemo() {
+// Demo instance to run ECC Sigature Generation and Verification.
+void ECCSignatureDemo() {
     string msg_string;
 
     cout << "Enter message to encrypt: ";
+    cin.ignore(100, '\n');
     getline(cin, msg_string);
     Point P = {
         ZZ(HexToDecimal("188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012")),
@@ -410,8 +315,19 @@ void ECCDemo() {
 
 int main()
 {
-    // RSASigantureDemo();
-    // ElGamalDemo();
-    ECCDemo();
+    char option;
+    cout << "DIGITAL SIGNATURE SCHEMES\n\n(a) RSA Digital Signature\n(b) ElGamal Digital Signature\n(c) ECC Digital Signature\nOption(default=a): ";
+    cin >> option;
+
+    switch(option) {
+        case 'b':
+            ElGamalSignatureDemo();
+            break;
+        case 'c':
+            ECCSignatureDemo();
+            break;
+        default:
+            RSASigantureDemo();
+    }
     return 0;
 }

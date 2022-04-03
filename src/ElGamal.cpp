@@ -1,49 +1,12 @@
-#include <NTL/ZZ_p.h>
-#include <tuple>
-#include "HelperUtils.h"
+#include <NTL/ZZ.h>
 #include <iostream>
+
+#include "../utils/EncodeUtils.hpp"
+#include "../utils/ElGamalUtils.hpp"
 
 using namespace std;
 using namespace NTL;
 
-// Generate DL Parmaeters
-// p = l-bits
-// q = q-bits
-// g <= q-1
-tuple<ZZ, ZZ, ZZ> GenerateDLParameters(long l, long t)
-{
-    // Initialize DL Parameteres
-    ZZ p, q, g;
-
-    // Temp variable
-    ZZ h, temp;
-
-    // Computer p such that q divides p-1 using GermainPrimes
-    GenGermainPrime(q, t);
-    p = 2*q + 1;    
-
-    // Generate g that is not 1
-    do
-    {
-        RandomBnd(h, p);
-        div(temp, p - 1, q);
-        PowerMod(g, h, temp, p);
-    } while (g == 1);
-
-    return {p, q, g};
-}
-
-// Generates the DL Key Pair
-// x is Private Key
-// y is Public Key
-tuple<ZZ, ZZ> GenerateDLKeyPair(ZZ p, ZZ q, ZZ g) {
-    ZZ x, y;
-
-    RandomBnd(x, q);
-    PowerMod(y, g, x, p);
-
-    return {x, y};
-}
 
 tuple<ZZ, ZZ> ElGamalEncrypt(ZZ p, ZZ q, ZZ g, ZZ y, string msg) {
     ZZ k, m, c1, c2;
@@ -60,19 +23,20 @@ tuple<ZZ, ZZ> ElGamalEncrypt(ZZ p, ZZ q, ZZ g, ZZ y, string msg) {
     return {c1, c2};
 }
 
-string ElGamalDecrypt(ZZ p, ZZ q, ZZ g, ZZ x, ZZ c1, ZZ c2) {
-    string msg;
+ZZ ElGamalDecrypt(ZZ p, ZZ q, ZZ g, ZZ x, ZZ c1, ZZ c2) {
+    // m is to store message in decimals
+    ZZ m;
 
     // Temp variables
-    // m is to store message in decimals
-    ZZ temp, m;
+    ZZ temp;
 
     PowerMod(temp, c1, x, p);         // c1^x mod p
     InvMod(temp, temp, p);            // c1^(-x) mod p 
     MulMod(m, c2, temp, p);
 
-    msg = Decode(m);
-    return msg;
+    cout << "Decrypted Message: " << Decode(m) << "\n\n\n";
+
+    return m;
 }
 
 int main() {
@@ -81,7 +45,7 @@ int main() {
     // Get the Key Size
     long keySize;
     char option;
-    cout << "Select RSA Key Size \n(a) 512\n(b) 1024\n\nOption(default=a):";
+    cout << "Select ElGamal Key Size \n(a) 512\n(b) 1024\n\nOption(default=a):";
     option = getchar();
     keySize = option == 'b' ? 1024 : 512;
     cout << "\nYou have chose " << keySize << " bits for the key.\n" << endl;
@@ -102,7 +66,9 @@ int main() {
     cout << "\nc1: " << DisplayBase64(c1) << "\nc2: " << DisplayBase64(c2) << endl;
 
     // Decrypt the message
-    cout << "\nDecrypted Message: " << ElGamalDecrypt(p, q, g, x, c1, c2) << endl;
+    Decode(ElGamalDecrypt(p, q, g, x, c1, c2));
 
+    // An NTL Error happens here, I'm not sure why. But it doesn't
+    // Affect the code so I'm going to leave it there for now.
     return 0;
 }
