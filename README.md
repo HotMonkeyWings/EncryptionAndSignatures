@@ -29,7 +29,7 @@ To run the code, simply run the output file as per the example given below.
 
 ## Extra Notes
 
-Utility files have been added in the `ultils/` folder. They contain necessary
+Utility files have been added in the `utils/` folder. They contain necessary
 functions to facilitate parameter Generation and Convertions.
 
 ## Output Screenshots
