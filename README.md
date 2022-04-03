@@ -4,7 +4,7 @@
 </h1>
 <p><center>By Dev Sony, B180297CS</center></p>
 
-[Github Repo](https://github.com/HotMonkeyWings/Discriminant-Function)
+[Github Repo](https://github.com/HotMonkeyWings/EncryptionAndSignatures)
 
 ## Compile
 
@@ -30,25 +30,25 @@ To run the code, simply run the output file as per the example given below.
 
 ### RSA
 #### 512 BITS
-![RSA512](/screenshots/RSA512.png)
+![RSA512](screenshots/RSA512.png)
 #### 1024 BITS
-![RSA512](/screenshots/RSA1024.png)
+![RSA512](screenshots/RSA1024.png)
 
 ### El Gamal
 #### 512 BITS
-![ElGamal512](/screenshots/ElGamal512.png)
+![ElGamal512](screenshots/ElGamal512.png)
 #### 1024 BITS
-![ElGamal1024](/screenshots/ElGamal1024.png)
+![ElGamal1024](screenshots/ElGamal1024.png)
 
 ### ECC
-![ECC](/screenshots/ECC.png)
+![ECC](screenshots/ECC.png)
 
 ### Digital Signatures
 #### RSA
-![RSA512](/screenshots/DS_RSA512.png)
-![RSA1024](/screenshots/DS_RSA1024.png)
+![RSA512](screenshots/DS_RSA512.png)
+![RSA1024](screenshots/DS_RSA1024.png)
 #### El Gamal
-![ElGamal512](/screenshots/DS_ElGamal512.png)
-![ElGamal1024](/screenshots/DS_ElGamal1024.png)
+![ElGamal512](screenshots/DS_ElGamal512.png)
+![ElGamal1024](screenshots/DS_ElGamal1024.png)
 #### ECC
-![ECC](/screenshots/DS_ECC.png)
+![ECC](screenshots/DS_ECC.png)
