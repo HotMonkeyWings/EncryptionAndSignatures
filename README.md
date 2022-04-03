@@ -6,9 +6,10 @@
 
 [Github Repo](https://github.com/HotMonkeyWings/EncryptionAndSignatures)
 
+*The main source code is in `/src/`*
 ## Compile
 
-To compile a .cpp file from the source directory, use the make command as follows
+To compile a .cpp file from `src/`, use the make command as follows
 and pass the filename without the extension. The output file will be stored in the
 `build/` folder.
 
